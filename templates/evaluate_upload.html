@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Evaluate Answers{% endblock %}
+
+{% block content %}
+<h1>Evaluate Answer Sheets</h1>
+<p>Upload the original source material(s) and the completed answer sheet(s) for evaluation.</p>
+
+<form method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="source_files">Source Files:</label>
+        <input type="file" id="source_files" name="source_files" multiple required>
+        <small>The original material the questions were based on.</small>
+    </div>
+
+    <div class="form-group">
+        <label for="answer_files">Answer Sheets:</label>
+        <input type="file" id="answer_files" name="answer_files" multiple required>
+        <small>The completed answers to be evaluated.</small>
+    </div>
+
+     <button type="submit">Evaluate Answers</button>
+</form>
+
+<!-- Optional: List previously uploaded files for selection -->
+
+{% endblock %}

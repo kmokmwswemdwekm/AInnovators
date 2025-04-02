@@ -1,0 +1,12 @@
+
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<h1>Welcome to AI Educator Tools</h1>
+<p>Choose an option:</p>
+<ul>
+    <li><a href="{{ url_for('generate_upload') }}" class="button">Generate Questions from Source Material</a></li>
+    <li><a href="{{ url_for('evaluate_upload') }}" class="button">Evaluate Answer Sheets</a></li>
+</ul>
+{% endblock %}

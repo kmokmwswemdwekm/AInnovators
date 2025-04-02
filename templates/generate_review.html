@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Review Generated Questions{% endblock %}
+
+{% block content %}
+<h1>Review Generated Questions</h1>
+<p>Here are the questions generated based on your sources:</p>
+
+<div class="generated-content">
+    <!-- If rendering HTML from Markdown -->
+    {{ questions_html|safe if questions_html else '' }} 
+
+    <!-- If rendering plain text -->
+    <pre><code>{#{{ questions_text | safe if questions_text else 'No questions generated.' }}#}</code></pre>
+</div>
+
+<hr>
+<h2>Refine Questions (Chat - Placeholder)</h2>
+<p><em>[Chatbot interface to suggest changes would go here. This requires significant JavaScript and backend logic.]</em></p>
+<textarea placeholder="Type your refinement requests here..."></textarea>
+<button type="button" disabled>Send to Chat (Not Implemented)</button>
+
+<hr>
+<h2>Download Questions</h2>
+<p>Once you are satisfied, download the questions:</p>
+<a href="{{ url_for('generate_download', format='pdf') }}" class="button">Download as PDF</a>
+<a href="{{ url_for('generate_download', format='docx') }}" class="button">Download as DOCX</a>
+
+<hr>
+<a href="{{ url_for('generate_upload') }}">Generate New Questions</a>
+{% endblock %}

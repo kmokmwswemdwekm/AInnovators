@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Educator Tools{% endblock %}</title>
+    <!-- Link to a CSS framework like Bootstrap or your own CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('index') }}">Home</a> |
+        <a href="{{ url_for('generate_upload') }}">Generate Questions</a> |
+        <a href="{{ url_for('evaluate_upload') }}">Evaluate Answers</a>
+    </nav>
+    <hr>
+    <main class="container">
+        {% include '_flash_messages.html' %} <!-- Include flash messages -->
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer>
+        <hr>
+        <p>© {{ now.year }} AI Educator Tools</p> {# Example using context processor #}
+    </footer>
+    {% block scripts_extra %}{% endblock %}
+</body>
+</html>

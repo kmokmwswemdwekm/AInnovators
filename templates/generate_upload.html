@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Generate Questions{% endblock %}
+
+{% block content %}
+<h1>Generate Questions</h1>
+<p>Upload one or more source files (txt, pdf, docx, md, images) and specify the desired questions.</p>
+
+<form method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="source_files">Source Files:</label>
+        <input type="file" id="source_files" name="source_files" multiple required>
+        <small>Allowed types: {{ config.ALLOWED_EXTENSIONS }}</small>
+    </div>
+
+    <fieldset>
+        <legend>Question Parameters</legend>
+        <div class="form-group">
+            <label for="mcq-questions">Number of MCQs:</label>
+            <input type="number" id="mcq-questions" name="mcq-questions" value="5" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="short-questions">Number of Short Answer Questions:</label>
+            <input type="number" id="short-questions" name="short-questions" value="3" min="0" required>
+        </div>
+        <div class="form-group">
+            <label for="long-questions">Number of Long Answer Questions:</label>
+            <input type="number" id="long-questions" name="long-questions" value="1" min="0" required>
+        </div>
+        <!-- Add numerical questions input if needed -->
+        <div class="form-group">
+            <label for="difficulty-level">Difficulty Level:</label>
+            <select id="difficulty-level" name="difficulty-level">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+    </fieldset>
+
+    <button type="submit">Generate Questions</button>
+</form>
+{% endblock %}

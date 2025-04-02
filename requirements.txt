@@ -1,0 +1,7 @@
+Flask
+google
+python-dotenv  # To load environment variables from .env
+python-docx    # For creating DOCX files
+fpdf2          # For creating PDF files
+Werkzeug       # Usually installed with Flask, ensure >= 2.0 for secure_filename
+markdown       # To potentially render markdown from Gemini

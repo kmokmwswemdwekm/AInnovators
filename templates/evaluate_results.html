@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Evaluation Results{% endblock %}
+
+{% block content %}
+<h1>Evaluation Results</h1>
+<p>Here is the evaluation based on the provided sources and answer sheets:</p>
+
+<div class="generated-content">
+    <!-- If rendering HTML from Markdown -->
+    {{ results_html|safe if results_html else '' }} 
+
+    <!-- If rendering plain text -->
+    <pre><code>{#{{ results_text | safe if results_text else 'No evaluation results available.' }}#}</code></pre>
+</div>
+
+<hr>
+<h2>Download Evaluation</h2>
+<a href="{{ url_for('evaluate_download', format='pdf') }}" class="button">Download Marksheet (PDF)</a>
+<a href="{{ url_for('evaluate_download', format='docx') }}" class="button">Download Marksheet (DOCX)</a>
+
+<hr>
+<a href="{{ url_for('evaluate_upload') }}">Evaluate New Answers</a>
+{% endblock %}
