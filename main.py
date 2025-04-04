@@ -318,7 +318,9 @@ def generate_upload():
             mcq_questions = int(request.form.get('mcq-questions', 0))
             short_questions = int(request.form.get('short-questions', 0))
             long_questions = int(request.form.get('long-questions', 0))
+            numerical_questions=int(request.form.get('numerical-questions', 0))
             difficulty_level = request.form.get('difficulty-level', 'medium')
+
         except ValueError:
             flash("Invalid number format for question counts.", "danger")
             cleanup_uploaded_files(uploaded_filenames, app.config['UPLOAD_SOURCE_FOLDER'])
@@ -330,14 +332,17 @@ def generate_upload():
         prompt = (
             f"Act as an expert educator. Analyze the provided document(s) thoroughly. "
             f"Based *strictly* on the content within these documents, generate the following educational questions:\n"
-            f"- {mcq_questions} Multiple Choice Questions (MCQs). Each MCQ should have 4 distinct options (A, B, C, D) and clearly indicate the single correct answer.\n"
+            f"- {mcq_questions} Multiple Choice Questions (MCQs). Each MCQ should have 4 distinct options (A, B, C, D), Do not display the answer.\n"
             f"- {short_questions} Short Answer Questions requiring concise, factual answers derived directly from the text.\n"
             f"- {long_questions} Long Answer Questions designed to assess deeper understanding, critical thinking, or application of concepts from the source material.\n\n"
+            f"-{numerical_questions} Numerical Questions to assess the problem solving abilities of the students.\n\n"
             f"All questions must be at a '{difficulty_level}' difficulty level relative to the source material's complexity.\n"
             f"Format the output clearly using Markdown:\n"
             f"## Multiple Choice Questions\n1. [Question text]...\nA. [Option]\nB. [Option]\nC. [Option]\nD. [Option]\n**Answer: [Correct Letter]**\n\n"
             f"## Short Answer Questions\n1. [Question text]...\n\n"
             f"## Long Answer Questions\n1. [Question text]...\n\n"
+            f"## Numerical Questions\n1. [Question text]...\n\n"
+            f"**IMPORTANT:** Do not include any additional text, explanations, or commentary outside of the questions themselves. "
             f"Do not add any introduction, conclusion, or commentary outside of the requested question structure."
         )
 
@@ -579,19 +584,25 @@ def evaluate_upload():
         # (Prompt remains the same)
         prompt = (
             "Act as an expert teaching assistant providing detailed evaluation.\n"
-            "You are given the original source material document(s) AND one or more student answer sheet document(s).\n\n"
+            "You are given the original source material document(s), a document with questions, AND one or more student answer sheet document(s).\n\n"
             "**Your Task:** Evaluate the submitted answer sheet(s) based *strictly* on the information present in the provided source material(s).\n\n"
             "**Evaluation Criteria:**\n"
             "1.  **Accuracy:** Are the answers factually correct according to the source material?\n"
             "2.  **Completeness:** Do the answers address all parts of the question asked (implicitly or explicitly)?\n"
             "3.  **Relevance:** Are the answers directly related to the question and derived from the source?\n"
             "4.  **Clarity:** Are the answers presented clearly and understandably?\n\n"
+            "**Important:**\n"
+            "You are to also assess the student based on different parameters such as cognitive ability, critical thinking, active recall, etc.\n"
+            "AND provide a comprehensive summary about the concepts the student has understood and the concepts they need to work on.\n\n"
+            "You are to provide a score for each answer based on the above criteria. The scoring should be out of 10.\n\n"
             "**Output Format:**\n"
             "Provide a structured evaluation, ideally question-by-question if the answer sheet format allows. For each question/answer:\n"
             "-   State the question (or reference number).\n"
             "-   Summarize the student's answer briefly.\n"
             "-   Provide specific feedback based on the criteria above (Accuracy, Completeness, Relevance, Clarity).\n"
             "-   Assign a score or points for the answer (e.g., X out of Y points) and justify it briefly.\n\n"
+            "-   Provide a summary of the student's performance across all questions, highlighting strengths and areas for improvement.\n\n"
+            "-  Provide a comprehensive view about which aspect of the mind (cognitive ability, critical thinking, active recall, etc.) the question challenges and how has the student performed.\n\n"
             "After evaluating all answers, provide:\n"
             "-   **Overall Score:** Calculate a total score (e.g., total points, percentage).\n"
             "-   **Overall Feedback:** Summarize the student's performance, highlighting strengths and key areas for improvement.\n\n"
