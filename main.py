@@ -125,12 +125,24 @@ from google.genai import types # Often needed for specific configurations/types
 from dotenv import load_dotenv
 from fpdf import FPDF
 from docx import Document
+from flask_session import Session
 
 # --- Configuration ---
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-insecure-secret-key-CHANGE-ME')
+app.config['SESSION_TYPE'] = 'filesystem' # Use filesystem for session storage
+
+session_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'flask_session')
+if not os.path.exists(session_dir):
+    os.makedirs(session_dir)
+app.config['SESSION_FILE_DIR'] = session_dir
+
+# 4. Optional: Make sessions non-permanent (deleted when browser closes)
+app.config['SESSION_PERMANENT'] = False 
+
+server_session = Session(app) 
 
 # --- File Upload Configuration ---
 UPLOAD_SOURCE_FOLDER = 'uploads/sources'
@@ -526,7 +538,7 @@ def evaluate_upload():
         for file in source_files:
             if file and file.filename != '' and allowed_file(file.filename):
                 original_filename = file.filename
-                safe_name = make_safe_filename(f"src_{original_filename}")
+                safe_name = secure_filename(f"src_{original_filename}")
                 filepath = os.path.join(app.config['UPLOAD_SOURCE_FOLDER'], safe_name)
                 try:
                     file.save(filepath)
@@ -561,7 +573,7 @@ def evaluate_upload():
         for file in question_files:
             if file and file.filename != '' and allowed_file(file.filename):
                 original_filename = file.filename
-                safe_name = make_safe_filename(f"src_{original_filename}")
+                safe_name = secure_filename(f"src_{original_filename}")
                 filepath = os.path.join(app.config['UPLOAD_QUESTION_FOLDER'], safe_name)
                 try:
                     file.save(filepath)
@@ -600,7 +612,7 @@ def evaluate_upload():
         for file in answer_files:
              if file and file.filename != '' and allowed_file(file.filename):
                 original_filename = file.filename
-                safe_name = make_safe_filename(f"ans_{original_filename}")
+                safe_name = secure_filename(f"ans_{original_filename}")
                 filepath = os.path.join(app.config['UPLOAD_ANSWER_FOLDER'], safe_name)
                 try:
                     file.save(filepath)
@@ -660,16 +672,22 @@ def evaluate_upload():
         all_gemini_objects_for_eval = eval_source_gemini_objects +eval_question_gemini_objects+ eval_answer_gemini_objects
         try:
             print("Sending evaluation request to Gemini API...")
-            full_prompt_parts = all_gemini_objects_for_eval + [prompt]
+            # full_prompt_parts = all_gemini_objects_for_eval + [prompt]
             response = client.models.generate_content(
                 model=f'models/{model_id}',
-                contents=full_prompt_parts
+                contents=[
+                    eval_source_gemini_objects,
+                    eval_question_gemini_objects,
+                    eval_answer_gemini_objects, 
+                    prompt
+                ]
                 # Add config/safety if needed
             )
 
             if hasattr(response, 'text'):
                  evaluation_text = response.text
                  print("Gemini evaluation received.")
+                 print("Evaluation Text:", evaluation_text) # Debugging
             elif hasattr(response, 'prompt_feedback') and response.prompt_feedback.block_reason:
                  block_reason = response.prompt_feedback.block_reason
                  flash(f"Evaluation blocked. Reason: {block_reason}", "danger")
@@ -681,10 +699,11 @@ def evaluate_upload():
                  evaluation_text = "Error: Unexpected response format from AI."
 
             # Store results
+            
             session['evaluation_results'] = evaluation_text
-            session['eval_source_filenames'] = eval_source_filenames
-            session['eval_answer_filenames'] = eval_answer_filenames
-            session['eval_question_filenames'] = eval_question_filenames
+            # session['eval_source_filenames'] = eval_source_filenames
+            # session['eval_answer_filenames'] = eval_answer_filenames
+            # session['eval_question_filenames'] = eval_question_filenames
 
             # Cleanup Gemini files
             cleanup_gemini_files(all_gemini_objects_for_eval) # Moved cleanup
