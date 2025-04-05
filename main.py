@@ -287,8 +287,9 @@ def generate_upload():
         for file in files:
             if file and file.filename != '' and allowed_file(file.filename):
                 original_filename = file.filename
-                safe_name = make_safe_filename(original_filename)
+                safe_name = secure_filename(original_filename)
                 filepath = os.path.join(app.config['UPLOAD_SOURCE_FOLDER'], safe_name)
+                
                 try:
                     file.save(filepath)
                     temp_local_paths.append(filepath)
@@ -297,6 +298,8 @@ def generate_upload():
                     # Upload to Gemini (NEW SDK - client.files.upload)
                     print(f"Uploading {safe_name} to Gemini...")
                     # Pass the path directly
+                    print(f'filepath={filepath}')#debugging
+
                     gemini_file = client.files.upload(file=filepath) # Use client.files.upload
                     gemini_file_objects.append(gemini_file)
                     print(f"Uploaded to Gemini: {gemini_file.name}")
@@ -332,13 +335,13 @@ def generate_upload():
         prompt = (
             f"Act as an expert educator. Analyze the provided document(s) thoroughly. "
             f"Based *strictly* on the content within these documents, generate the following educational questions:\n"
-            f"- {mcq_questions} Multiple Choice Questions (MCQs). Each MCQ should have 4 distinct options (A, B, C, D), Do not display the answer.\n"
+            f"- {mcq_questions} Multiple Choice Questions (MCQs). Each MCQ should have 4 distinct options (A, B, C, D).\n"
             f"- {short_questions} Short Answer Questions requiring concise, factual answers derived directly from the text.\n"
             f"- {long_questions} Long Answer Questions designed to assess deeper understanding, critical thinking, or application of concepts from the source material.\n\n"
             f"-{numerical_questions} Numerical Questions to assess the problem solving abilities of the students.\n\n"
             f"All questions must be at a '{difficulty_level}' difficulty level relative to the source material's complexity.\n"
             f"Format the output clearly using Markdown:\n"
-            f"## Multiple Choice Questions\n1. [Question text]...\nA. [Option]\nB. [Option]\nC. [Option]\nD. [Option]\n**Answer: [Correct Letter]**\n\n"
+            f"## Multiple Choice Questions\n1. [Question text]...\nA. [Option]\nB. [Option]\nC. [Option]\nD. [Option]\n"
             f"## Short Answer Questions\n1. [Question text]...\n\n"
             f"## Long Answer Questions\n1. [Question text]...\n\n"
             f"## Numerical Questions\n1. [Question text]...\n\n"
@@ -351,13 +354,17 @@ def generate_upload():
             print("Sending request to Gemini API...")
             # Combine file objects and the text prompt into a list for 'contents'
             # The file objects returned by client.files.upload are directly usable here
-            full_prompt_parts = gemini_file_objects + [prompt]
+            # full_prompt_parts = gemini_file_objects + [prompt]
 
             # Use the client object to call generate_content
             # Pass model name and contents. Optional config can be added.
             response = client.models.generate_content(
                 model=f'models/{model_id}', # Model name often needs 'models/' prefix with client
-                contents=full_prompt_parts,
+                contents=[
+                    prompt,
+                    gemini_file_objects,# List of file objects
+
+                ]
                 # generation_config=generation_config, # Optional
                 # safety_settings=safety_settings      # Optional
             )
