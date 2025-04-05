@@ -135,11 +135,14 @@ app.secret_key = os.getenv('FLASK_SECRET_KEY', 'fallback-insecure-secret-key-CHA
 # --- File Upload Configuration ---
 UPLOAD_SOURCE_FOLDER = 'uploads/sources'
 UPLOAD_ANSWER_FOLDER = 'uploads/answers'
+UPLOAD_QUESTION_FOLDER='uploads/questions'
+
 GENERATED_FOLDER = 'generated'
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'png', 'jpg', 'jpeg', 'gif', 'docx', 'md'}
 
 app.config['UPLOAD_SOURCE_FOLDER'] = UPLOAD_SOURCE_FOLDER
 app.config['UPLOAD_ANSWER_FOLDER'] = UPLOAD_ANSWER_FOLDER
+app.config['UPLOAD_QUESTION_FOLDER'] = UPLOAD_QUESTION_FOLDER
 app.config['GENERATED_FOLDER'] = GENERATED_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 
@@ -545,6 +548,42 @@ def evaluate_upload():
             flash('No valid source files uploaded to Gemini.', 'warning')
             cleanup_uploaded_files([os.path.basename(p) for p in eval_source_temp_paths], app.config['UPLOAD_SOURCE_FOLDER'])
             return redirect(request.url)
+        
+        # --- File Handling (questions) ---
+        question_files = request.files.getlist('question_files')
+        eval_question_filenames = []
+        eval_question_gemini_objects = []
+        eval_question_temp_paths = []
+
+        if not question_files or all(f.filename == '' for f in question_files):
+             flash('No source files selected.', 'warning'); return redirect(request.url)
+
+        for file in question_files:
+            if file and file.filename != '' and allowed_file(file.filename):
+                original_filename = file.filename
+                safe_name = make_safe_filename(f"src_{original_filename}")
+                filepath = os.path.join(app.config['UPLOAD_QUESTION_FOLDER'], safe_name)
+                try:
+                    file.save(filepath)
+                    eval_question_temp_paths.append(filepath)
+                    eval_question_filenames.append(safe_name)
+                    print(f"Uploading source {safe_name} to Gemini...")
+                    gemini_file = client.files.upload(file=filepath) # Use client
+                    eval_question_gemini_objects.append(gemini_file)
+                    print(f"Uploaded source to Gemini: {gemini_file.name}")
+                except Exception as e:
+                    flash(f"Error saving/uploading source file {original_filename}: {e}", "danger")
+                    cleanup_uploaded_files([os.path.basename(p) for p in eval_question_temp_paths], app.config['UPLOAD_QUESTION_FOLDER'])
+                    cleanup_gemini_files(eval_question_gemini_objects)
+                    return redirect(request.url)
+            elif file.filename != '':
+                 flash(f"File type not allowed for source: {file.filename}", "warning")
+
+        if not eval_question_filenames or not eval_question_gemini_objects:
+            flash('No valid source files uploaded to Gemini.', 'warning')
+            cleanup_uploaded_files([os.path.basename(p) for p in eval_question_temp_paths], app.config['UPLOAD_QUESTION_FOLDER'])
+            return redirect(request.url)
+
 
         # --- File Handling (Answers) ---
         answer_files = request.files.getlist('answer_files')
@@ -618,7 +657,7 @@ def evaluate_upload():
         )
 
         # --- Call Gemini API for Evaluation (NEW SDK - client.models.generate_content) ---
-        all_gemini_objects_for_eval = eval_source_gemini_objects + eval_answer_gemini_objects
+        all_gemini_objects_for_eval = eval_source_gemini_objects +eval_question_gemini_objects+ eval_answer_gemini_objects
         try:
             print("Sending evaluation request to Gemini API...")
             full_prompt_parts = all_gemini_objects_for_eval + [prompt]
@@ -645,9 +684,10 @@ def evaluate_upload():
             session['evaluation_results'] = evaluation_text
             session['eval_source_filenames'] = eval_source_filenames
             session['eval_answer_filenames'] = eval_answer_filenames
+            session['eval_question_filenames'] = eval_question_filenames
 
             # Cleanup Gemini files
-            # cleanup_gemini_files(all_gemini_objects_for_eval) # Moved cleanup
+            cleanup_gemini_files(all_gemini_objects_for_eval) # Moved cleanup
 
             return redirect(url_for('evaluate_results'))
 
