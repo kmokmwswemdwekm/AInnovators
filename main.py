@@ -161,6 +161,7 @@ app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
 # --- Create directories ---
 os.makedirs(UPLOAD_SOURCE_FOLDER, exist_ok=True)
 os.makedirs(UPLOAD_ANSWER_FOLDER, exist_ok=True)
+os.makedirs(UPLOAD_QUESTION_FOLDER, exist_ok=True)
 os.makedirs(GENERATED_FOLDER, exist_ok=True)
 
 # --- Gemini API Configuration (NEW SDK - google-genai with Client) ---
